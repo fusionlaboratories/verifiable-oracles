@@ -1,9 +1,20 @@
 stages:
   - build
+  - test
 
+# Build the dev environment
 devenv-ci:
   stage: build
   tags:
     - nixos-verifiable-oracles-runner
   script:
     - devenv ci
+
+# dummy test job
+test:
+  stage: test
+  tags:
+    - nixos-verifiable-oracles-runner
+  script:
+    - devenv shell true
+
