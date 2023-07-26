@@ -1,0 +1,9 @@
+stages:
+  - build
+
+devenv-ci:
+  stage: build
+  tags:
+    - nixos-verifiable-oracles-runner
+  script:
+    - devenv ci

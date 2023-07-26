@@ -1,14 +1,11 @@
-{ pkgs, ... }:
-
-let
-ignite = pkgs.callPackage ./nix/ignite.nix {};
-in
-{
+{pkgs, ...}: let
+  ignite = pkgs.callPackage ./nix/ignite.nix {};
+in {
   # https://devenv.sh/basics/
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ ignite ];
+  packages = [ignite];
 
   # https://devenv.sh/scripts/
   # scripts.hello.exec = "echo hello from $GREET";
@@ -23,6 +20,8 @@ in
 
   # https://devenv.sh/pre-commit-hooks/
   # pre-commit.hooks.shellcheck.enable = true;
+  pre-commit.hooks.alejandra.enable = true;
+  #
 
   # https://devenv.sh/processes/
   # processes.ping.exec = "ping example.com";
