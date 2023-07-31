@@ -1,4 +1,8 @@
-{pkgs, ...}: let
+{
+  pkgs,
+  lib,
+  ...
+}: let
   ignite = pkgs.callPackage ./nix/ignite.nix {};
 in {
   # https://devenv.sh/basics/
@@ -11,12 +15,15 @@ in {
   # scripts.hello.exec = "echo hello from $GREET";
 
   enterShell = ''
+    export GOPATH="$(go env GOPATH)"
+    echo GOPATH=$GOPATH
     ignite version
   '';
 
   # https://devenv.sh/languages/
   # languages.nix.enable = true;
   languages.go.enable = true;
+  env.GOPATH = lib.mkForce "";
 
   # https://devenv.sh/pre-commit-hooks/
   # pre-commit.hooks.shellcheck.enable = true;
