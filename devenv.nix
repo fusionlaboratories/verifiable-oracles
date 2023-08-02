@@ -28,7 +28,7 @@ in {
   # https://devenv.sh/pre-commit-hooks/
   # pre-commit.hooks.shellcheck.enable = true;
   pre-commit.hooks.alejandra.enable = true;
-  #
+  pre-commit.hooks.gofmt.enable = true;
 
   # https://devenv.sh/processes/
   # processes.ping.exec = "ping example.com";
