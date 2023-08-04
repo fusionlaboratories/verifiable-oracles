@@ -9,7 +9,7 @@ in {
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ignite];
+  packages = [ignite pkgs.nodePackages.ganache];
 
   # https://devenv.sh/scripts/
   # scripts.hello.exec = "echo hello from $GREET";
@@ -18,6 +18,7 @@ in {
     export GOPATH="$(go env GOPATH)"
     echo GOPATH=$GOPATH
     ignite version
+    ganache --version
   '';
 
   # https://devenv.sh/languages/
