@@ -32,7 +32,7 @@ in {
   pre-commit.hooks.gofmt.enable = true;
 
   # https://devenv.sh/processes/
-  # processes.ping.exec = "ping example.com";
+  processes.ganache.exec = "ganache --wallet.deterministic=true";
 
   # See full reference at https://devenv.sh/reference/options/
 }
