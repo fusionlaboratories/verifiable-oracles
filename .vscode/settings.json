@@ -1,5 +1,6 @@
 {
     "gopls": {
-        "ui.semanticTokens": true
+        "ui.semanticTokens": true,
+        "build.buildFlags": ["-tags=integration"],
     }
 }

@@ -57,11 +57,11 @@ func NewAccount(client *ethclient.Client, address string, hexkey string) (*Accou
 	return acc, nil
 }
 
-func (a Account) Account() common.Address {
+func (a *Account) Account() common.Address {
 	return a.account
 }
 
-func (a Account) WeiAt(ctx context.Context, blockNumber *big.Int) (*big.Int, error) {
+func (a *Account) WeiAt(ctx context.Context, blockNumber *big.Int) (*big.Int, error) {
 	if blockNumber == nil {
 		return nil, errors.New("blockNumber is nil")
 	}
@@ -69,7 +69,7 @@ func (a Account) WeiAt(ctx context.Context, blockNumber *big.Int) (*big.Int, err
 	return a.client.BalanceAt(ctx, a.account, blockNumber)
 }
 
-func (a Account) EthAt(ctx context.Context, blockNumber *big.Int) (*big.Float, error) {
+func (a *Account) EthAt(ctx context.Context, blockNumber *big.Int) (*big.Float, error) {
 	wei, err := a.WeiAt(ctx, blockNumber)
 
 	if err != nil {
@@ -79,7 +79,7 @@ func (a Account) EthAt(ctx context.Context, blockNumber *big.Int) (*big.Float, e
 	return EthFromWei(wei), nil
 }
 
-func (a Account) PublicKey() *ecdsa.PublicKey {
+func (a *Account) PublicKey() *ecdsa.PublicKey {
 	return a.publicKey
 }
 
@@ -94,7 +94,7 @@ func BlockNumberFromUint64(blockNumber uint64) *big.Int {
 	return new(big.Int).SetUint64(blockNumber)
 }
 
-func (a Account) SendEthTo(ctx context.Context, toAddress common.Address, amount *big.Int, gasLimit uint64) (*types.Transaction, error) {
+func (a *Account) SendEthTo(ctx context.Context, toAddress common.Address, amount *big.Int, gasLimit uint64) (*types.Transaction, error) {
 	// Create transaction
 	fromAddress := a.account
 	nonce, err := a.client.PendingNonceAt(ctx, fromAddress)
