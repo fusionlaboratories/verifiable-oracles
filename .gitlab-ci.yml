@@ -19,9 +19,13 @@ test:
     - devenv shell ganache-start
   script:
     - source ganache.env
-    - devenv shell go test ./... -tags=integration
+    - devenv shell gotestsum --junitfile report.xml --format testname -- -tags=integration ./...
   after_script:
     - source ganache.env
     - devenv shell ganache-stop "${GANACHE}"
     - devenv shell ganache instances list
     - rm ganache.env
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml

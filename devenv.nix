@@ -9,7 +9,7 @@ in {
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ignite pkgs.nodePackages.ganache];
+  packages = [ignite pkgs.nodePackages.ganache pkgs.gotestsum];
 
   # https://devenv.sh/scripts/
   # devenv splash screen, not run in CI
