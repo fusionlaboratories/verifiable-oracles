@@ -8,10 +8,10 @@ We use [devenv](https://devenv.sh/getting-started/) for specifying the
 development environment. It can be either activated using `direnv` or `devenv
 shell`.
 
-## Ganache
+## Integration Tests with Ganache
 
-This is a Ganache client written in Go.  We will be using it to simulate
-transactions in order to test the verifiable oracle.
+CI job is set up to start `ganache` in deterministic mode running on
+`127.0.0.1:8545`.  You can manualy start your own instance by using `devenv up`.
 
 1. Start `ganache` in a deterministic mode in a separate terminal window.  It
 should bind to localhost (`127.0.0.1`) and its default port (`8545`).  You can
@@ -34,12 +34,10 @@ either start the `ganache` process directly
     ...
     ```
 
-2. Run `go run ./ganache` to run the client.
+2. Run `go test ./... -tags=integration` to run integration tests
 
     ```sh
-    $ go run ./ganache
-    Successfully connected to ganache on http://127.0.0.1:8545
-    Current block number is 0
-    Account 0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1 has 1000 ETH
-    Account 0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0 has 1000 ETH
+    $ go test ./... -tags=integration
+    ok      github.com/qredo/verifiable-oracles (cached)
+    ok      github.com/qredo/verifiable-oracles/ganache (cached)
     ```
