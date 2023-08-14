@@ -27,5 +27,7 @@ test:
     - rm ganache.env
   artifacts:
     when: always
+    paths:
+      - report.xml
     reports:
       junit: report.xml
