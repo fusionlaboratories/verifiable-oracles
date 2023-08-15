@@ -2,6 +2,18 @@
 
 Implementation of Verifiable Oracles on top of Cosmos SDK.
 
+## Project layout
+
+Project contents
+
+- `.vscode/` Visual Studio Code-specific stuff,
+  - `extensions.json` recommended extensions,
+  - `settings.json` workspace settings,
+- `cmd/` CLI commands
+  - `ganache/` ganache client PoC,
+- `nix/` nix-specific stuff,
+- `pkg/` golang packages.
+
 ## devenv
 
 We use [devenv](https://devenv.sh/getting-started/) for specifying the
