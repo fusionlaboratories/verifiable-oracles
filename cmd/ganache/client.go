@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/qredo/verifiable-oracles/pkg/balance"
 )
 
 type Account struct {
@@ -61,33 +61,21 @@ func (a *Account) Account() common.Address {
 	return a.account
 }
 
-func (a *Account) WeiAt(ctx context.Context, blockNumber *big.Int) (*big.Int, error) {
+func (a *Account) BalanceAt(ctx context.Context, blockNumber *big.Int) (*balance.Balance, error) {
 	if blockNumber == nil {
-		return nil, errors.New("blockNumber is nil")
+		return nil, fmt.Errorf("blockNumber is nil")
 	}
 
-	return a.client.BalanceAt(ctx, a.account, blockNumber)
-}
-
-func (a *Account) EthAt(ctx context.Context, blockNumber *big.Int) (*big.Float, error) {
-	wei, err := a.WeiAt(ctx, blockNumber)
-
+	wei, err := a.client.BalanceAt(ctx, a.account, blockNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	return EthFromWei(wei), nil
+	return balance.BalanceFromWei(wei), nil
 }
 
 func (a *Account) PublicKey() *ecdsa.PublicKey {
 	return a.publicKey
-}
-
-func EthFromWei(wei *big.Int) *big.Float {
-	weiFloat := new(big.Float)
-	weiFloat.SetString(wei.String())
-	eth := new(big.Float).Quo(weiFloat, big.NewFloat(math.Pow10(18)))
-	return eth
 }
 
 func BlockNumberFromUint64(blockNumber uint64) *big.Int {
@@ -101,14 +89,15 @@ func (a *Account) SendEthTo(ctx context.Context, toAddress common.Address, amoun
 	if err != nil {
 		return nil, err
 	}
+
 	gasPrice, err := a.client.SuggestGasPrice(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	var data []byte
 	tx := types.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, data)
 
-	// Sign transaction
 	chainID, err := a.client.ChainID(ctx)
 	if err != nil {
 		return nil, err
@@ -128,64 +117,72 @@ func main() {
 	url := fmt.Sprintf("http://%s:%s", host, port)
 
 	client, err := ethclient.Dial(url)
-
 	if err != nil {
 		panic(err)
 	}
+	defer client.Close() // Close the client when done
+
 	fmt.Printf("Successfully connected to ganache on %s\n", url)
 
-	// What is the current block
-	blockNumberUint64, err := client.BlockNumber(context.Background())
+	ctx := context.Background()
+
+	// Get current block number
+	blockNumberUint64, err := client.BlockNumber(ctx)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Current block number is %d\n", blockNumberUint64)
+
+	// Create accounts
+	accounts := []struct {
+		address string
+		key     string
+	}{
+		{"0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1", "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d"},
+		{"0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0", "0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1"},
+	}
+
 	blockNumber := BlockNumberFromUint64(blockNumberUint64)
-	fmt.Printf("Current block number is %d\n", blockNumber)
 
-	alice, err := NewAccount(client, "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1", "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d")
-	if err != nil {
-		panic(err)
+	for _, accInfo := range accounts {
+		acc, err := NewAccount(client, accInfo.address, accInfo.key)
+		if err != nil {
+			panic(err)
+		}
+
+		balance, err := acc.BalanceAt(ctx, blockNumber)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Account %s has %s ETH (Wei: %s)\n", acc.Account().Hex(), balance.Eth().String(), balance.Wei().String())
+
+		bobAddress := common.HexToAddress("0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0")
+		amount := big.NewInt(1000000000000000000)
+		gasLimit := uint64(21000)
+
+		signedTx, err := acc.SendEthTo(ctx, bobAddress, amount, gasLimit)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Signed Tx: %s\n", signedTx.Hash())
 	}
 
-	aliceEth, err := alice.EthAt(context.Background(), blockNumber)
-	if err != nil {
-		panic(err)
+	nextBlock := new(big.Int).Add(blockNumber, big.NewInt(1))
+	fmt.Printf("Next block number is %s\n", nextBlock)
+
+	for _, accInfo := range accounts {
+		acc, err := NewAccount(client, accInfo.address, accInfo.key)
+		if err != nil {
+			panic(err)
+		}
+
+		balance, err := acc.BalanceAt(ctx, nextBlock)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Account %s has %s ETH (Wei: %s)\n", acc.Account().Hex(), balance.Eth().String(), balance.Wei().String())
 	}
-	fmt.Printf("Account %s has %s ETH\n", alice.Account(), aliceEth.String())
-
-	// getting the 2nd account
-	bob, err := NewAccount(client, "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0", "0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1")
-	if err != nil {
-		panic(err)
-	}
-
-	bobEth, err := bob.EthAt(context.Background(), blockNumber)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Account %s has %s ETH\n", bob.Account(), bobEth.String())
-
-	// Try to send ETH from alice to bob
-	signedTx, err := alice.SendEthTo(context.Background(), bob.Account(), big.NewInt(1000000000000000000), 21000)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Signed Tx: %s\n", signedTx.Hash())
-
-	nextBlock := big.NewInt(0).Add(blockNumber, big.NewInt(1))
-	fmt.Printf("Next block number is %d\n", nextBlock)
-
-	aliceEth_, err := alice.EthAt(context.Background(), nextBlock)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Account %s has %s ETH\n", alice.Account(), aliceEth_.String())
-
-	bobEth_, err := bob.EthAt(context.Background(), nextBlock)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Account %s has %s ETH\n", bob.Account(), bobEth_.String())
 }

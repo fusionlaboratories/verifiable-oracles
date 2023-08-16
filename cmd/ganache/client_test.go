@@ -2,34 +2,11 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
-
-func TestEthFromWei(t *testing.T) {
-	tests := []struct {
-		name     string
-		wei      *big.Int
-		expected string
-	}{
-		{"Test 1 Ether", big.NewInt(1000000000000000000), "1"},
-		{"Test 5e-06 Ether", big.NewInt(5000000000000), "5e-06"},
-		{"Test 0 Ether", big.NewInt(0), "0"},
-		// Add more test cases here
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result := EthFromWei(test.wei).String()
-			if result != test.expected {
-				t.Errorf("Expected %s, but got %s", test.expected, result)
-			}
-		})
-	}
-}
 
 func TestNewAccount(t *testing.T) {
 	host := "127.0.0.1"
