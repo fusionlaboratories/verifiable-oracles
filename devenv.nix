@@ -32,6 +32,9 @@ in {
 
   enterShell = ''
     export GOPATH="$(go env GOPATH)"
+    if [ "$GOPATH" != "" ]; then
+      export PATH="$PATH:$GOPATH/bin"
+    fi
     if [ "$GITLAB_CI" != "true" ]; then
       devenv-splash
     fi
