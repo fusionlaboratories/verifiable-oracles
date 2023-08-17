@@ -2,7 +2,6 @@ package oracle
 
 import (
 	"fmt"
-	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,7 +9,7 @@ import (
 
 // Custom error type for missing blocks
 type MissingBlockError struct {
-	BlockNumber *big.Int
+	BlockNumber uint64
 	Msg         string
 }
 
@@ -20,7 +19,7 @@ func (e *MissingBlockError) Error() string {
 
 // Oracle Queries
 type Oracle interface {
-	GetBlockHash(number *big.Int) (common.Hash, error)
+	GetBlockHash(number uint64) (common.Hash, error)
 }
 
 type InMemoryOracle struct {
@@ -32,13 +31,11 @@ func NewInMemoryOracle() *InMemoryOracle {
 	return &InMemoryOracle{hashes: make(map[uint64]common.Hash)}
 }
 
-func (o *InMemoryOracle) GetBlockHash(number *big.Int) (common.Hash, error) {
+func (o *InMemoryOracle) GetBlockHash(number uint64) (common.Hash, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	// TODO: Add boundary check for Uint64
-	n := number.Uint64()
-	h, ok := o.hashes[n]
+	h, ok := o.hashes[number]
 	if !ok {
 		return common.Hash{}, &MissingBlockError{
 			BlockNumber: number,
@@ -48,13 +45,11 @@ func (o *InMemoryOracle) GetBlockHash(number *big.Int) (common.Hash, error) {
 	return h, nil
 }
 
-func (o *InMemoryOracle) AddBlock(blockNumber *big.Int, blockHash common.Hash) {
+func (o *InMemoryOracle) AddBlock(blockNumber uint64, blockHash common.Hash) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	n := blockNumber.Uint64()
-
-	o.hashes[n] = blockHash
+	o.hashes[blockNumber] = blockHash
 }
 
 type TranscriptOracle struct {
@@ -68,7 +63,7 @@ func NewTranscriptOracle(inner Oracle) *TranscriptOracle {
 	return &TranscriptOracle{inner: inner}
 }
 
-func (to *TranscriptOracle) GetBlockHash(number *big.Int) (common.Hash, error) {
+func (to *TranscriptOracle) GetBlockHash(number uint64) (common.Hash, error) {
 	hash, err := to.inner.GetBlockHash(number)
 	if err != nil {
 		// TODO: Consider Wrapping the Error
@@ -78,7 +73,7 @@ func (to *TranscriptOracle) GetBlockHash(number *big.Int) (common.Hash, error) {
 	to.mu.Lock()
 	defer to.mu.Unlock()
 
-	to.transcript = append(to.transcript, BlockFact{Number: number, Hash: hash})
+	to.transcript = append(to.transcript, BlockFact{BlockNumber: number, BlockHash: hash})
 
 	return hash, nil
 }
@@ -95,24 +90,7 @@ func (to *TranscriptOracle) GetTranscript() []BlockFact {
 var _ Oracle = (*TranscriptOracle)(nil)
 var _ Oracle = (*InMemoryOracle)(nil)
 
-// TODO: Encode as JSON
 type BlockFact struct {
-	// TODO: Is this immutable?
-	Number *big.Int
-	Hash   common.Hash
+	BlockNumber uint64      `json:"blockNumber"`
+	BlockHash   common.Hash `json:"blockHash"`
 }
-
-/*
-// Transcript Entry for getting blocks
-
-// TODO: Transcript Entry for getting transactions
-type TransactionFact struct {
-}
-
-// TODO: What kind of interface transcript entry needs to have
-type Fact interface {
-	// TODO: print as string
-	// TODO: encode as JSON
-	// TODO: encode as Field elements
-}
-*/
