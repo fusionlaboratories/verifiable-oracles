@@ -12,7 +12,8 @@ Project contents
 - `cmd/` CLI commands
   - `ganache/` ganache client PoC,
 - `nix/` nix-specific stuff,
-- `pkg/` golang packages.
+- `pkg/` golang packages,
+- [`chain/`](#cosmossdk-chain) example CosmosSDK chain.
 
 ## Goldilocks field implementation
 
@@ -80,3 +81,15 @@ either start the `ganache` process directly
     ok      github.com/qredo/verifiable-oracles (cached)
     ok      github.com/qredo/verifiable-oracles/ganache (cached)
     ```
+
+## CosmosSDK Chain
+
+`chain/` directory contains a CosmosSDK chain created by
+
+```sh
+ignite scaffold chain github.com/qredo/verifiable-oracles/chain \
+                      --clear-cache \
+                      --no-module \
+                      --skip-git \
+                      --address-prefix voc
+```

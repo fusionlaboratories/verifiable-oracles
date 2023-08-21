@@ -1,28 +1,17 @@
 # Ignite nix wrapper, currently only supports arm64
 {
   pkgs,
-  stdenv,
-}: let
-  version = "0.27.1";
-  system =
-    if stdenv.isDarwin
-    then "darwin"
-    else "linux";
-  sha256sums = {
-    darwin = {
-      "0.27.1" = "N28aJdE0sfeo/DHVj0GF/KUKge+/1X4EHUNfsu4u5u0=";
-    };
-    linux = {
-      "0.27.1" = "/kujtVVpraAtZMJU/pWb9pQG6Bz6/1sTq1Yz6wxgckU=";
-    };
+  lib,
+}:
+pkgs.buildGoModule rec {
+  pname = "ignite";
+  version = src.rev;
+  src = pkgs.fetchFromGitHub {
+    owner = "ignite";
+    repo = "cli";
+    rev = "7d54608e405e9bad36750c937317c760fb004e12";
+    sha256 = "sha256-Va4J6QfzFwNry4wNslPELiU3D5DoLLk812H4cMXnYsQ=";
   };
-  tarball = pkgs.fetchurl {
-    url = "https://github.com/ignite/cli/releases/download/v${version}/ignite_${version}_${system}_arm64.tar.gz";
-    sha256 = sha256sums."${system}"."${version}";
-  };
-in
-  pkgs.runCommand "ignite-${version}" {} ''
-    mkdir -p $out/bin
-    tar xf ${tarball}
-    mv ignite $out/bin/
-  ''
+  vendorSha256 = "sha256-F5+G/eWB/RFldaB8d8a9UQW2fd+afUf0q12+ka940s8=";
+  subPackages = ["ignite/cmd/ignite"];
+}

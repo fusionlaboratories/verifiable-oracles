@@ -45,6 +45,9 @@ in {
   languages.go.enable = true;
   env.GOPATH = lib.mkForce "";
 
+  # needed by ignite
+  languages.javascript.enable = true;
+
   # https://devenv.sh/pre-commit-hooks/
   # pre-commit.hooks.shellcheck.enable = true;
   pre-commit.hooks.alejandra.enable = true;
