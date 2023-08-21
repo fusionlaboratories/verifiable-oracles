@@ -10,6 +10,14 @@ devenv-ci:
   script:
     - devenv ci
 
+# build the chain
+build-all:
+  stage: build
+  tags:
+    - nixos-verifiable-oracles-runner
+  script:
+    - devenv shell go build -v ./... ./chain/...
+
 # Run golang tests
 test:
   stage: test
