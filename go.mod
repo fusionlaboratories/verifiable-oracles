@@ -1,6 +1,6 @@
 module github.com/qredo/verifiable-oracles
 
-go 1.20
+go 1.21.0
 
 require (
 	github.com/bits-and-blooms/bitset v1.7.0
