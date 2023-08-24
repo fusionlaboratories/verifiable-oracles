@@ -1,0 +1,24 @@
+[workspace]
+members = [
+  "air",
+  "assembly",
+  "core",
+  "miden",
+  "processor",
+  "prover",
+  "stdlib",
+  "test-utils",
+  "verifier"
+]
+resolver = "2"
+
+[profile.optimized]
+inherits = "release"
+codegen-units = 1
+lto = true
+
+[profile.test-release]
+inherits = "release"
+debug = true
+debug-assertions = true
+overflow-checks = true
