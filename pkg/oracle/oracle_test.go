@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/qredo/verifiable-oracles/pkg/oracle"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/qredo/verifiable-oracles/pkg/oracle"
 )
 
 // Variables

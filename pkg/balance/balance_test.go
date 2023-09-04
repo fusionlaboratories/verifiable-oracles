@@ -4,8 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/qredo/verifiable-oracles/pkg/balance"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/qredo/verifiable-oracles/pkg/balance"
 )
 
 func TestZeroValueWei(t *testing.T) {
