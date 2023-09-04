@@ -3,8 +3,9 @@ package prover_test
 import (
 	"testing"
 
-	"github.com/qredo/verifiable-oracles/pkg/prover"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/qredo/verifiable-oracles/pkg/prover"
 )
 
 type DummyProver struct {

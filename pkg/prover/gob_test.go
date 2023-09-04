@@ -3,8 +3,9 @@ package prover_test
 import (
 	"testing"
 
-	"github.com/qredo/verifiable-oracles/pkg/prover"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/qredo/verifiable-oracles/pkg/prover"
 )
 
 func Test_GobProver_Prove_Empty(t *testing.T) {
