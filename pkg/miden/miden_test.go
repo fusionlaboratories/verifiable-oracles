@@ -38,6 +38,10 @@ func TestMidenVersion(t *testing.T) {
 }
 
 func TestMidenRun(t *testing.T) {
+	if !testHasMiden {
+		t.Skip("miden not found, skipping")
+	}
+
 	assert := assert.New(t)
 	output, _, err := miden.Run("testdata/test.masm")
 
