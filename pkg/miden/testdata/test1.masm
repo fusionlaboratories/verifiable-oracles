@@ -1,0 +1,4 @@
+# Example program that generates proof that a = b
+begin
+  assert_eq
+end
