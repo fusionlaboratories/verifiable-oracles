@@ -12,7 +12,10 @@ import (
 	"github.com/qredo/verifiable-oracles/pkg/miden"
 )
 
-var testHasMiden bool
+var (
+	_testHasMiden  bool
+	_defaultOutput = out()
+)
 
 func out(v ...field.Element) field.Vector {
 	l := len(v)
@@ -33,7 +36,6 @@ var midenTable = map[string]struct {
 			"begin",
 			"end",
 		},
-		expected: out(),
 	},
 	"assert": {
 		assembly: []string{
@@ -44,7 +46,6 @@ var midenTable = map[string]struct {
 		inputFile: miden.InputFile{
 			OperandStack: field.Vector{field.One()},
 		},
-		expected: out(),
 	},
 	"assertz": {
 		assembly: []string{
@@ -55,35 +56,53 @@ var midenTable = map[string]struct {
 		inputFile: miden.InputFile{
 			OperandStack: field.Vector{{}},
 		},
-		expected: out(),
+	},
+	"get field element from advice stack": {
+		assembly: []string{
+			"begin",
+			"adv_push.1",
+			"assert_eq",
+			"end",
+		},
+		inputFile: miden.InputFile{
+			OperandStack: field.Vector{field.One()},
+			AdviceStack:  field.Vector{field.One()},
+		},
 	},
 }
 
 func init() {
 	if _, err := exec.LookPath("miden"); err == nil {
-		testHasMiden = true
+		_testHasMiden = true
 	}
 }
 
-func handleExitError(t *testing.T, err error) {
+func needsMiden(t *testing.T) {
 	t.Helper()
-	assert := assert.New(t)
 
-	assert.Nil(err)
+	if !_testHasMiden {
+		t.Skip("miden not found, skipping")
+	}
+}
+
+func handleExitError(t *testing.T, err error) bool {
+	t.Helper()
 	if err != nil {
 		var exitError *exec.ExitError
 		if errors.As(err, &exitError) {
-			t.Log(string(exitError.Stderr))
+			t.Errorf(string(exitError.Stderr))
 		} else {
-			t.Logf("unknown error %v", err)
+			t.Errorf("unknown error %v", err)
 		}
+
+		return false
 	}
+
+	return true
 }
 
 func TestMiden(t *testing.T) {
-	if !testHasMiden {
-		t.Skip("miden not found, skipping")
-	}
+	needsMiden(t)
 
 	for name, tc := range midenTable {
 		t.Run(name, func(t *testing.T) {
@@ -92,17 +111,22 @@ func TestMiden(t *testing.T) {
 			assembly := strings.Join(tc.assembly, "\n")
 			output, _, err := miden.Run(assembly, tc.inputFile)
 
-			handleExitError(t, err)
-			assert.Equal(tc.expected, output)
+			// Avoid cluttering test output by only checking output when
+			// the execution was successful
+			if handleExitError(t, err) {
+				expectedOutput := tc.expected
+				if expectedOutput == nil {
+					expectedOutput = _defaultOutput
+				}
+				assert.Equal(expectedOutput, output)
+			}
 		})
 	}
 
 }
 
 func TestMiden_assert(t *testing.T) {
-	if !testHasMiden {
-		t.Skip("miden not found, skipping")
-	}
+	needsMiden(t)
 	assert := assert.New(t)
 
 	assembly := `begin
@@ -121,9 +145,7 @@ end`
 }
 
 func TestMidenVersion(t *testing.T) {
-	if !testHasMiden {
-		t.Skip("miden not found, skipping")
-	}
+	needsMiden(t)
 
 	assert := assert.New(t)
 
@@ -133,9 +155,7 @@ func TestMidenVersion(t *testing.T) {
 }
 
 func TestMidenRunFile(t *testing.T) {
-	if !testHasMiden {
-		t.Skip("miden not found, skipping")
-	}
+	needsMiden(t)
 
 	assert := assert.New(t)
 	output, _, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
