@@ -11,26 +11,46 @@ import (
 	"github.com/qredo/verifiable-oracles/pkg/miden"
 )
 
-func TestInputFileJsonEncode(t *testing.T) {
-	assert := assert.New(t)
-	var i miden.InputFile
-
-	j, err := json.Marshal(i)
-
-	assert.Nil(err)
-	assert.Equal(`{"operand_stack":[]}`, string(j))
+var _inputFileTable = map[string]struct {
+	input miden.InputFile
+	want  string
+}{
+	"zero inputFile": {
+		input: miden.InputFile{},
+		want:  `{"operand_stack":[]}`,
+	},
+	"non-empty operand stack": {
+		input: miden.InputFile{
+			OperandStack: field.Vector{field.One()},
+		},
+		want: `{"operand_stack":["1"]}`,
+	},
+	"non-empty advice stack": {
+		input: miden.InputFile{
+			AdviceStack: field.Vector{field.One()},
+		},
+		want: `{"advice_stack":["1"],"operand_stack":[]}`,
+	},
+	"both stacks non-empty": {
+		input: miden.InputFile{
+			OperandStack: field.Vector{field.One()},
+			AdviceStack:  field.Vector{field.One()},
+		},
+		want: `{"advice_stack":["1"],"operand_stack":["1"]}`,
+	},
 }
 
-func TestInputFileJsonEncode1(t *testing.T) {
-	assert := assert.New(t)
-	f := miden.InputFile{
-		OperandStack: field.Vector{field.One()},
+func TestInputFileJsonMarshal(t *testing.T) {
+	for name, tc := range _inputFileTable {
+		t.Run(name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			j, err := json.Marshal(tc.input)
+
+			assert.Nil(err)
+			assert.Equal(tc.want, string(j))
+		})
 	}
-
-	j, err := json.Marshal(f)
-
-	assert.Nil(err)
-	assert.Equal(`{"operand_stack":["1"]}`, string(j))
 }
 
 func TestTestData(t *testing.T) {
