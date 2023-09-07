@@ -38,15 +38,37 @@ func TestMiden(t *testing.T) {
 	if !testHasMiden {
 		t.Skip("miden not found, skipping")
 	}
-
 	assert := assert.New(t)
-	assembly := `begin
-	end`
 
-	output, _, err := miden.Run(assembly)
+	assembly := `begin
+end`
+
+	output, _, err := miden.Run(assembly, miden.InputFile{})
+	expectedOutput := make(field.Vector, 16)
 
 	handleExitError(t, err)
-	assert.NotEmpty(output)
+	assert.Equal(expectedOutput, output)
+}
+
+func TestMiden_assert(t *testing.T) {
+	if !testHasMiden {
+		t.Skip("miden not found, skipping")
+	}
+	assert := assert.New(t)
+
+	assembly := `begin
+	assert
+end`
+
+	inputFile := miden.InputFile{
+		OperandStack: field.Vector{field.One()},
+	}
+
+	output, _, err := miden.Run(assembly, inputFile)
+	expectedOutput := make(field.Vector, 16)
+
+	handleExitError(t, err)
+	assert.Equal(expectedOutput, output)
 }
 
 func TestMidenVersion(t *testing.T) {
@@ -61,13 +83,13 @@ func TestMidenVersion(t *testing.T) {
 	assert.Equal("Miden 0.6.0", v)
 }
 
-func TestMidenRun(t *testing.T) {
+func TestMidenRunFile(t *testing.T) {
 	if !testHasMiden {
 		t.Skip("miden not found, skipping")
 	}
 
 	assert := assert.New(t)
-	output, _, err := miden.RunFile("testdata/test.masm")
+	output, _, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
 
 	handleExitError(t, err)
 	assert.Equal(make(field.Vector, 16), output)

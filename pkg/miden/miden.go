@@ -2,6 +2,7 @@ package miden
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -81,26 +82,45 @@ func extractHash(outLines []string) ([]byte, error) {
 	return hex.DecodeString(output)
 }
 
-func Run(assembly string) (field.Vector, []byte, error) {
-	f, err := os.CreateTemp("", "*.masm")
+func tempFile(contents []byte, pattern string) (name string, err error) {
+	f, err := os.CreateTemp("", pattern)
+	if err != nil {
+		return
+	}
+	name = f.Name()
+	if _, err = f.Write(contents); err != nil {
+		return
+	}
+	if err = f.Close(); err != nil {
+		return
+	}
+	return
+}
+
+func Run(assembly string, input InputFile) (field.Vector, []byte, error) {
+	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, nil, err
 	}
-	name := f.Name()
-	defer os.Remove(name)
+	defer os.Remove(assemblyFile)
 
-	if _, err := f.Write([]byte(assembly)); err != nil {
+	inputContents, err := json.Marshal(input)
+	if err != nil {
 		return nil, nil, err
-	}
-	if err := f.Close(); err != nil {
-		return nil, nil, err
+
 	}
 
-	return RunFile(name)
+	inputFile, err := tempFile(inputContents, "*.json")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer os.Remove(inputFile)
+
+	return RunFile(assemblyFile, inputFile)
 }
 
-func RunFile(assemblyPath string) (field.Vector, []byte, error) {
-	cmd := exec.Command("miden", "run", "--assembly", assemblyPath)
+func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error) {
+	cmd := exec.Command("miden", "run", "--assembly", assemblyPath, "--input", inputPath)
 
 	out, err := cmd.Output()
 	if err != nil {
