@@ -3,6 +3,7 @@ package miden_test
 import (
 	"errors"
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,51 @@ import (
 )
 
 var testHasMiden bool
+
+func out(v ...field.Element) field.Vector {
+	l := len(v)
+	if l < 16 {
+		pad := make(field.Vector, 16-l)
+		v = append(v, pad...)
+	}
+	return v
+}
+
+var midenTable = map[string]struct {
+	assembly  []string
+	inputFile miden.InputFile
+	expected  field.Vector
+}{
+	"empty program": {
+		assembly: []string{
+			"begin",
+			"end",
+		},
+		expected: out(),
+	},
+	"assert": {
+		assembly: []string{
+			"begin",
+			"assert",
+			"end",
+		},
+		inputFile: miden.InputFile{
+			OperandStack: field.Vector{field.One()},
+		},
+		expected: out(),
+	},
+	"assertz": {
+		assembly: []string{
+			"begin",
+			"assertz",
+			"end",
+		},
+		inputFile: miden.InputFile{
+			OperandStack: field.Vector{{}},
+		},
+		expected: out(),
+	},
+}
 
 func init() {
 	if _, err := exec.LookPath("miden"); err == nil {
@@ -38,16 +84,19 @@ func TestMiden(t *testing.T) {
 	if !testHasMiden {
 		t.Skip("miden not found, skipping")
 	}
-	assert := assert.New(t)
 
-	assembly := `begin
-end`
+	for name, tc := range midenTable {
+		t.Run(name, func(t *testing.T) {
+			assert := assert.New(t)
 
-	output, _, err := miden.Run(assembly, miden.InputFile{})
-	expectedOutput := make(field.Vector, 16)
+			assembly := strings.Join(tc.assembly, "\n")
+			output, _, err := miden.Run(assembly, tc.inputFile)
 
-	handleExitError(t, err)
-	assert.Equal(expectedOutput, output)
+			handleExitError(t, err)
+			assert.Equal(tc.expected, output)
+		})
+	}
+
 }
 
 func TestMiden_assert(t *testing.T) {
