@@ -4,12 +4,13 @@
   ...
 }: let
   ignite = pkgs.callPackage ./nix/ignite.nix {};
+  miden = pkgs.callPackage ./nix/miden.nix {};
 in {
   # https://devenv.sh/basics/
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ignite pkgs.nodePackages.ganache pkgs.gotestsum];
+  packages = [ignite miden pkgs.nodePackages.ganache pkgs.gotestsum];
 
   # https://devenv.sh/scripts/
   # devenv splash screen, not run in CI
@@ -17,6 +18,7 @@ in {
     echo GOPATH=$GOPATH
     ignite version
     ganache --version
+    miden --version
   '';
   # This scripts starts ganache and writes ganache.env file, which contains all the environment variables
   # TODO Use $CI_JOB_ID to add a suffic to ganache.env
