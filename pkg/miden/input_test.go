@@ -36,6 +36,6 @@ func TestInputFileJsonEncode1(t *testing.T) {
 func TestTestData(t *testing.T) {
 	assert := assert.New(t)
 
-	_, err := os.ReadFile("testdata/input.json")
+	_, err := os.ReadFile("testdata/test.json")
 	assert.Nil(err)
 }
