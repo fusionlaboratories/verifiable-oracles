@@ -3,6 +3,7 @@ package miden
 import (
 	"encoding/hex"
 	"errors"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -81,7 +82,25 @@ func extractHash(outLines []string) ([]byte, error) {
 }
 
 func Run(assembly string) (field.Vector, []byte, error) {
-	cmd := exec.Command("miden", "run", "--assembly", assembly)
+	f, err := os.CreateTemp("", "*.masm")
+	if err != nil {
+		return nil, nil, err
+	}
+	name := f.Name()
+	defer os.Remove(name)
+
+	if _, err := f.Write([]byte(assembly)); err != nil {
+		return nil, nil, err
+	}
+	if err := f.Close(); err != nil {
+		return nil, nil, err
+	}
+
+	return RunFile(name)
+}
+
+func RunFile(assemblyPath string) (field.Vector, []byte, error) {
+	cmd := exec.Command("miden", "run", "--assembly", assemblyPath)
 
 	out, err := cmd.Output()
 	if err != nil {

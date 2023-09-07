@@ -19,10 +19,34 @@ func init() {
 	}
 }
 
+func handleExitError(t *testing.T, err error) {
+	t.Helper()
+	assert := assert.New(t)
+
+	assert.Nil(err)
+	if err != nil {
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
+			t.Log(string(exitError.Stderr))
+		} else {
+			t.Logf("unknown error %v", err)
+		}
+	}
+}
+
 func TestMiden(t *testing.T) {
 	if !testHasMiden {
 		t.Skip("miden not found, skipping")
 	}
+
+	assert := assert.New(t)
+	assembly := `begin
+	end`
+
+	output, _, err := miden.Run(assembly)
+
+	handleExitError(t, err)
+	assert.NotEmpty(output)
 }
 
 func TestMidenVersion(t *testing.T) {
@@ -43,16 +67,8 @@ func TestMidenRun(t *testing.T) {
 	}
 
 	assert := assert.New(t)
-	output, _, err := miden.Run("testdata/test.masm")
+	output, _, err := miden.RunFile("testdata/test.masm")
 
-	assert.Nil(err)
-	if err != nil {
-		var exitError *exec.ExitError
-		if errors.As(err, &exitError) {
-			t.Log(string(exitError.Stderr))
-		} else {
-			t.Logf("unknown error %v", err)
-		}
-	}
+	handleExitError(t, err)
 	assert.Equal(make(field.Vector, 16), output)
 }
