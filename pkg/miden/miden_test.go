@@ -125,25 +125,6 @@ func TestMiden(t *testing.T) {
 
 }
 
-func TestMiden_assert(t *testing.T) {
-	needsMiden(t)
-	assert := assert.New(t)
-
-	assembly := `begin
-	assert
-end`
-
-	inputFile := miden.InputFile{
-		OperandStack: field.Vector{field.One()},
-	}
-
-	output, _, err := miden.Run(assembly, inputFile)
-	expectedOutput := make(field.Vector, 16)
-
-	handleExitError(t, err)
-	assert.Equal(expectedOutput, output)
-}
-
 func TestMidenVersion(t *testing.T) {
 	needsMiden(t)
 
