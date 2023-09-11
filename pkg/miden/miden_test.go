@@ -1,6 +1,7 @@
 package miden_test
 
 import (
+	"encoding/hex"
 	"errors"
 	"os/exec"
 	"strings"
@@ -101,6 +102,11 @@ func handleExitError(t *testing.T, err error) bool {
 	return true
 }
 
+func encodeHash(hash []byte) string {
+
+	return hex.EncodeToString(hash)
+}
+
 func TestMiden(t *testing.T) {
 	needsMiden(t)
 
@@ -143,4 +149,14 @@ func TestMidenRunFile(t *testing.T) {
 
 	handleExitError(t, err)
 	assert.Equal(make(field.Vector, 16), output)
+}
+
+func TestMidenCompileFile(t *testing.T) {
+	needsMiden(t)
+
+	assert := assert.New(t)
+	hash, err := miden.CompileFile("testdata/test.masm")
+
+	handleExitError(t, err)
+	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", encodeHash(hash))
 }

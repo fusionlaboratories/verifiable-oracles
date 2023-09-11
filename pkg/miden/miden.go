@@ -56,7 +56,6 @@ func extractOuptut(outLines []string) (field.Vector, error) {
 	return result, nil
 }
 
-// TODO: Figure how to use it
 func extractHash(outLines []string) ([]byte, error) {
 	outputPrefix := "Executing program with hash "
 	outputSuffix := "... done"
@@ -78,6 +77,25 @@ func extractHash(outLines []string) ([]byte, error) {
 	if suffIndex := strings.Index(output, outputSuffix); suffIndex != -1 {
 		output = output[:suffIndex]
 	}
+
+	return hex.DecodeString(output)
+}
+
+func extractHash_(outLines []string) ([]byte, error) {
+	outputPrefix := "program hash is "
+
+	var output string
+	for _, line := range outLines {
+		if strings.HasPrefix(line, outputPrefix) {
+			output = line
+			break
+		}
+	}
+
+	if len(output) == 0 {
+		return nil, errors.New("miden: hash line not found")
+	}
+	output = strings.TrimPrefix(output, outputPrefix)
 
 	return hex.DecodeString(output)
 }
@@ -133,4 +151,18 @@ func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error
 	hash, err2 := extractHash(outLines)
 
 	return output, hash, errors.Join(err1, err2)
+}
+
+func CompileFile(assemblyPath string) ([]byte, error) {
+	cmd := exec.Command("miden", "compile", "--assembly", assemblyPath)
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	outLines := strings.Split(string(out), "\n")
+
+	hash, err := extractHash_(outLines)
+	return hash, err
 }
