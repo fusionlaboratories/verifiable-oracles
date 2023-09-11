@@ -31,12 +31,14 @@ var midenTable = map[string]struct {
 	assembly  []string
 	inputFile miden.InputFile
 	expected  field.Vector
+	hash      string
 }{
 	"empty program": {
 		assembly: []string{
 			"begin",
 			"end",
 		},
+		hash: "f0db3924f3e2d677a51924b09ecef8a12416a6ceb09fadd39785bb4f685cab66",
 	},
 	"assert": {
 		assembly: []string{
@@ -47,6 +49,7 @@ var midenTable = map[string]struct {
 		inputFile: miden.InputFile{
 			OperandStack: field.Vector{field.One()},
 		},
+		hash: "1858ec2e6abdf1d1447474e5ab8e1313c4f93276e82f3baac9a056d6ecdc0c9b",
 	},
 	"assertz": {
 		assembly: []string{
@@ -57,6 +60,19 @@ var midenTable = map[string]struct {
 		inputFile: miden.InputFile{
 			OperandStack: field.Vector{{}},
 		},
+		hash: "f9b9df59a9549b8e8833d86ec3f1f97f0fdfe002c24eb8661c4d7242d3c14a45",
+	},
+	"add one to two": {
+		assembly: []string{
+			"begin",
+			"add",
+			"end",
+		},
+		inputFile: miden.InputFile{
+			OperandStack: field.Vector{field.One(), field.NewElement(2)},
+		},
+		expected: out(field.NewElement(3)),
+		hash:     "63c2b2b5cf6abd6414fb93cc7af4ad22fed1c8d3182ea1a01d3aba005c453c57",
 	},
 	"get field element from advice stack": {
 		assembly: []string{
@@ -69,6 +85,7 @@ var midenTable = map[string]struct {
 			OperandStack: field.Vector{field.One()},
 			AdviceStack:  field.Vector{field.One()},
 		},
+		hash: "5857c99e44517e8b7bf8abc514041ab75590b425147be13eae69be9bda411db7",
 	},
 }
 
@@ -107,7 +124,7 @@ func encodeHash(hash []byte) string {
 	return hex.EncodeToString(hash)
 }
 
-func TestMiden(t *testing.T) {
+func TestMidenRun(t *testing.T) {
 	needsMiden(t)
 
 	for name, tc := range midenTable {
@@ -115,7 +132,7 @@ func TestMiden(t *testing.T) {
 			assert := assert.New(t)
 
 			assembly := strings.Join(tc.assembly, "\n")
-			output, _, err := miden.Run(assembly, tc.inputFile)
+			output, hash, err := miden.Run(assembly, tc.inputFile)
 
 			// Avoid cluttering test output by only checking output when
 			// the execution was successful
@@ -124,11 +141,30 @@ func TestMiden(t *testing.T) {
 				if expectedOutput == nil {
 					expectedOutput = _defaultOutput
 				}
+				assert.Equal(tc.hash, encodeHash(hash))
 				assert.Equal(expectedOutput, output)
 			}
 		})
 	}
+}
 
+func TestMidenCompile(t *testing.T) {
+	needsMiden(t)
+
+	for name, tc := range midenTable {
+		t.Run(name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			assembly := strings.Join(tc.assembly, "\n")
+			hash, err := miden.Compile(assembly)
+
+			// Avoid cluttering test output by only checking output when
+			// the execution was successful
+			if handleExitError(t, err) {
+				assert.Equal(tc.hash, encodeHash(hash))
+			}
+		})
+	}
 }
 
 func TestMidenVersion(t *testing.T) {
@@ -145,9 +181,10 @@ func TestMidenRunFile(t *testing.T) {
 	needsMiden(t)
 
 	assert := assert.New(t)
-	output, _, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
+	output, hash, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
 
 	handleExitError(t, err)
+	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", encodeHash(hash))
 	assert.Equal(make(field.Vector, 16), output)
 }
 
