@@ -142,6 +142,16 @@ func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error
 	return output, hash, errors.Join(err1, err2)
 }
 
+func Compile(assembly string) ([]byte, error) {
+	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(assemblyFile)
+
+	return CompileFile(assemblyFile)
+}
+
 func CompileFile(assemblyPath string) ([]byte, error) {
 	cmd := exec.Command("miden", "compile", "--assembly", assemblyPath)
 
