@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	field "github.com/qredo/verifiable-oracles/pkg/goldilocks"
+	"golang.org/x/exp/slices"
 )
 
 // Execute Miden and get it's version
@@ -20,28 +21,37 @@ func Version() (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func extractOuptut(outLines []string) (field.Vector, error) {
+func extractLine(lines []string, prefix string, suffix string) (string, bool) {
+	outputIndex := slices.IndexFunc[string](lines,
+		func(line string) bool { return strings.HasPrefix(line, prefix) })
+
+	if outputIndex == -1 {
+		return "", false
+	}
+	line := lines[outputIndex]
+
+	// Trim prefix
+	line = line[len(prefix):]
+
+	// Trim after last occurrence of suffix
+	if suffIndex := strings.LastIndex(line, suffix); suffIndex != -1 {
+		line = line[:suffIndex]
+	}
+
+	return line, true
+}
+
+func extractOutput(outLines []string) (field.Vector, error) {
 	var (
 		outputPrefix = "Output: ["
 		outputSuffix = "]"
 		elemSep      = ", "
-
-		output string
 	)
 
-	for _, line := range outLines {
-		if strings.HasPrefix(line, outputPrefix) {
-			output = line
-			break
-		}
-	}
-
-	if len(output) == 0 {
+	output, ok := extractLine(outLines, outputPrefix, outputSuffix)
+	if !ok {
 		return nil, errors.New("miden: output line not found")
 	}
-
-	output = strings.TrimPrefix(output, outputPrefix)
-	output = strings.TrimSuffix(output, outputSuffix)
 
 	outElems := strings.Split(output, elemSep)
 	result := make(field.Vector, len(outElems))
@@ -56,46 +66,25 @@ func extractOuptut(outLines []string) (field.Vector, error) {
 	return result, nil
 }
 
-func extractHash(outLines []string) ([]byte, error) {
+func extractHashRun(outLines []string) ([]byte, error) {
 	outputPrefix := "Executing program with hash "
 	outputSuffix := "... done"
 
-	var output string
-	for _, line := range outLines {
-		if strings.HasPrefix(line, outputPrefix) {
-			output = line
-			break
-		}
-	}
-
-	if len(output) == 0 {
+	output, ok := extractLine(outLines, outputPrefix, outputSuffix)
+	if !ok {
 		return nil, errors.New("miden: hash line not found")
-	}
-
-	output = strings.TrimPrefix(output, outputPrefix)
-
-	if suffIndex := strings.Index(output, outputSuffix); suffIndex != -1 {
-		output = output[:suffIndex]
 	}
 
 	return hex.DecodeString(output)
 }
 
-func extractHash_(outLines []string) ([]byte, error) {
+func extractHashCompile(outLines []string) ([]byte, error) {
 	outputPrefix := "program hash is "
 
-	var output string
-	for _, line := range outLines {
-		if strings.HasPrefix(line, outputPrefix) {
-			output = line
-			break
-		}
-	}
-
-	if len(output) == 0 {
+	output, ok := extractLine(outLines, outputPrefix, "")
+	if !ok {
 		return nil, errors.New("miden: hash line not found")
 	}
-	output = strings.TrimPrefix(output, outputPrefix)
 
 	return hex.DecodeString(output)
 }
@@ -147,8 +136,8 @@ func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error
 
 	outLines := strings.Split(string(out), "\n")
 
-	output, err1 := extractOuptut(outLines)
-	hash, err2 := extractHash(outLines)
+	output, err1 := extractOutput(outLines)
+	hash, err2 := extractHashRun(outLines)
 
 	return output, hash, errors.Join(err1, err2)
 }
@@ -163,6 +152,6 @@ func CompileFile(assemblyPath string) ([]byte, error) {
 
 	outLines := strings.Split(string(out), "\n")
 
-	hash, err := extractHash_(outLines)
+	hash, err := extractHashCompile(outLines)
 	return hash, err
 }
