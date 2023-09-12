@@ -6,10 +6,10 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 
 	field "github.com/qredo/verifiable-oracles/pkg/goldilocks"
-	"golang.org/x/exp/slices"
 )
 
 // Execute Miden and get it's version
@@ -22,7 +22,7 @@ func Version() (string, error) {
 }
 
 func extractLine(lines []string, prefix string, suffix string) (string, bool) {
-	outputIndex := slices.IndexFunc[string](lines,
+	outputIndex := slices.IndexFunc[[]string](lines,
 		func(line string) bool { return strings.HasPrefix(line, prefix) })
 
 	if outputIndex == -1 {
