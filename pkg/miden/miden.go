@@ -12,6 +12,11 @@ import (
 	field "github.com/qredo/verifiable-oracles/pkg/goldilocks"
 )
 
+// TODO:
+// - [ ] Use --output flag from miden,
+// - [ ] Consider splitting the functionality into separate files,
+// - [ ] Consider adopting Context so we can cancel stuff if needed.
+
 // Execute Miden and get it's version
 func Version() (string, error) {
 	out, err := exec.Command("miden", "--version").Output()
