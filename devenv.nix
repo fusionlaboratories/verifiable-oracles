@@ -47,6 +47,7 @@ in {
   languages.go.enable = true;
   languages.go.package = pkgs.go_1_21;
   env.GOPATH = lib.mkForce "";
+  env.GOEXPERIMENT = "loopvar";
 
   # needed by ignite
   languages.javascript.enable = true;
