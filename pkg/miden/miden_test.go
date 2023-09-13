@@ -181,7 +181,7 @@ func TestMidenRunFile(t *testing.T) {
 	needsMiden(t)
 
 	assert := assert.New(t)
-	output, hash, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
+	output, hash, err := miden.RunFile("testdata/test.masm", "testdata/input.json")
 
 	handleExitError(t, err)
 	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))

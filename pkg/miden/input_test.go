@@ -53,9 +53,13 @@ func TestInputFileJsonMarshal(t *testing.T) {
 	}
 }
 
-func TestTestData(t *testing.T) {
+func TestInputTestData(t *testing.T) {
 	assert := assert.New(t)
+	var in miden.Input
 
-	_, err := os.ReadFile("testdata/test.json")
+	data, err := os.ReadFile("testdata/input.json")
+	assert.Nil(err)
+
+	err = json.Unmarshal(data, &in)
 	assert.Nil(err)
 }
