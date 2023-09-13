@@ -29,7 +29,7 @@ func out(v ...field.Element) field.Vector {
 
 var midenTable = map[string]struct {
 	assembly  []string
-	inputFile miden.InputFile
+	inputFile miden.Input
 	expected  field.Vector
 	hash      string
 }{
@@ -46,7 +46,7 @@ var midenTable = map[string]struct {
 			"assert",
 			"end",
 		},
-		inputFile: miden.InputFile{
+		inputFile: miden.Input{
 			OperandStack: field.Vector{field.One()},
 		},
 		hash: "1858ec2e6abdf1d1447474e5ab8e1313c4f93276e82f3baac9a056d6ecdc0c9b",
@@ -57,7 +57,7 @@ var midenTable = map[string]struct {
 			"assertz",
 			"end",
 		},
-		inputFile: miden.InputFile{
+		inputFile: miden.Input{
 			OperandStack: field.Vector{{}},
 		},
 		hash: "f9b9df59a9549b8e8833d86ec3f1f97f0fdfe002c24eb8661c4d7242d3c14a45",
@@ -68,7 +68,7 @@ var midenTable = map[string]struct {
 			"add",
 			"end",
 		},
-		inputFile: miden.InputFile{
+		inputFile: miden.Input{
 			OperandStack: field.Vector{field.One(), field.NewElement(2)},
 		},
 		expected: out(field.NewElement(3)),
@@ -81,7 +81,7 @@ var midenTable = map[string]struct {
 			"assert_eq",
 			"end",
 		},
-		inputFile: miden.InputFile{
+		inputFile: miden.Input{
 			OperandStack: field.Vector{field.One()},
 			AdviceStack:  field.Vector{field.One()},
 		},

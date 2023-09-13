@@ -12,27 +12,27 @@ import (
 )
 
 var _inputFileTable = map[string]struct {
-	input miden.InputFile
+	input miden.Input
 	want  string
 }{
 	"zero inputFile": {
-		input: miden.InputFile{},
+		input: miden.Input{},
 		want:  `{"operand_stack":[]}`,
 	},
 	"non-empty operand stack": {
-		input: miden.InputFile{
+		input: miden.Input{
 			OperandStack: field.Vector{field.One()},
 		},
 		want: `{"operand_stack":["1"]}`,
 	},
 	"non-empty advice stack": {
-		input: miden.InputFile{
+		input: miden.Input{
 			AdviceStack: field.Vector{field.One()},
 		},
 		want: `{"advice_stack":["1"],"operand_stack":[]}`,
 	},
 	"both stacks non-empty": {
-		input: miden.InputFile{
+		input: miden.Input{
 			OperandStack: field.Vector{field.One()},
 			AdviceStack:  field.Vector{field.One()},
 		},

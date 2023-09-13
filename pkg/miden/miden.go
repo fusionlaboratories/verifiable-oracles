@@ -117,7 +117,7 @@ func tempFile(contents []byte, pattern string) (name string, err error) {
 	return
 }
 
-func Run(assembly string, input InputFile) (field.Vector, ProgramHash, error) {
+func Run(assembly string, input Input) (field.Vector, ProgramHash, error) {
 	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, nil, err
@@ -179,7 +179,7 @@ func CompileFile(assemblyPath string) (ProgramHash, error) {
 	return hash, err
 }
 
-func Prove(assembly string, input InputFile) (Proof, error) {
+func Prove(assembly string, input Input) (Proof, error) {
 	panic("unimplemented")
 
 }
@@ -192,7 +192,7 @@ func ProveFile(assmeblyPath string, inputPath string, proofPath string) error {
 	return err
 }
 
-func Verify(programHash ProgramHash, proof Proof, input InputFile) (bool, error) {
+func Verify(programHash ProgramHash, proof Proof, input Input) (bool, error) {
 	panic("unimplemented")
 }
 

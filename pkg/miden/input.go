@@ -7,7 +7,7 @@ import (
 )
 
 // Input File for Miden
-type InputFile struct {
+type Input struct {
 	OperandStack field.Vector `json:"operand_stack"`
 	AdviceStack  field.Vector `json:"advice_stack,omitempty"`
 }
@@ -22,7 +22,7 @@ func marshalVector(v field.Vector) []string {
 
 // Need to explicitly implement json.Marshaler, as Miden expect expty stacks to
 // be encoded as []
-func (f InputFile) MarshalJSON() ([]byte, error) {
+func (f Input) MarshalJSON() ([]byte, error) {
 	data := map[string]any{}
 
 	data["operand_stack"] = marshalVector(f.OperandStack)
@@ -34,5 +34,5 @@ func (f InputFile) MarshalJSON() ([]byte, error) {
 }
 
 // Type Assertions
-var _ json.Marshaler = (*InputFile)(nil)
-var _ json.Marshaler = InputFile{}
+var _ json.Marshaler = (*Input)(nil)
+var _ json.Marshaler = Input{}
