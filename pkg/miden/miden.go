@@ -20,6 +20,9 @@ import (
 // Treating ProgramHash as []byte for now
 type ProgramHash = []byte
 
+// Treating Proof as []byte for now
+type Proof = []byte
+
 // Execute Miden and get it's version
 func Version() (string, error) {
 	out, err := exec.Command("miden", "--version").Output()
