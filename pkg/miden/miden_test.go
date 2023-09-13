@@ -119,7 +119,7 @@ func handleExitError(t *testing.T, err error) bool {
 	return true
 }
 
-func encodeHash(hash []byte) string {
+func encodeHash(hash miden.ProgramHash) string {
 
 	return hex.EncodeToString(hash)
 }

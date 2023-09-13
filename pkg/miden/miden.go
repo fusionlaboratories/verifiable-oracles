@@ -17,6 +17,9 @@ import (
 // - [ ] Consider splitting the functionality into separate files,
 // - [ ] Consider adopting Context so we can cancel stuff if needed.
 
+// Treating ProgramHash as []byte for now
+type ProgramHash = []byte
+
 // Execute Miden and get it's version
 func Version() (string, error) {
 	out, err := exec.Command("miden", "--version").Output()
@@ -109,7 +112,7 @@ func tempFile(contents []byte, pattern string) (name string, err error) {
 	return
 }
 
-func Run(assembly string, input InputFile) (field.Vector, []byte, error) {
+func Run(assembly string, input InputFile) (field.Vector, ProgramHash, error) {
 	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, nil, err
@@ -131,7 +134,7 @@ func Run(assembly string, input InputFile) (field.Vector, []byte, error) {
 	return RunFile(assemblyFile, inputFile)
 }
 
-func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error) {
+func RunFile(assemblyPath string, inputPath string) (field.Vector, ProgramHash, error) {
 	cmd := exec.Command("miden", "run", "--assembly", assemblyPath, "--input", inputPath)
 
 	out, err := cmd.Output()
@@ -147,7 +150,7 @@ func RunFile(assemblyPath string, inputPath string) (field.Vector, []byte, error
 	return output, hash, errors.Join(err1, err2)
 }
 
-func Compile(assembly string) ([]byte, error) {
+func Compile(assembly string) (ProgramHash, error) {
 	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, err
@@ -157,7 +160,7 @@ func Compile(assembly string) ([]byte, error) {
 	return CompileFile(assemblyFile)
 }
 
-func CompileFile(assemblyPath string) ([]byte, error) {
+func CompileFile(assemblyPath string) (ProgramHash, error) {
 	cmd := exec.Command("miden", "compile", "--assembly", assemblyPath)
 
 	out, err := cmd.Output()
