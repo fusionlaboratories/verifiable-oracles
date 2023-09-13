@@ -16,7 +16,8 @@ import (
 // TODO:
 // - [ ] Use --output flag from miden,
 // - [ ] Consider splitting the functionality into separate files,
-// - [ ] Consider adopting Context so we can cancel stuff if needed.
+// - [ ] Consider adopting Context so we can cancel stuff if needed:
+//  - we can use exec.CommandContext to handle it.
 
 // Treating ProgramHash as []byte for now
 type ProgramHash = []byte
