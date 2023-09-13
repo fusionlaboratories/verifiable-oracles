@@ -1,6 +1,7 @@
 package miden_test
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"os/exec"
@@ -132,7 +133,7 @@ func TestMidenRun(t *testing.T) {
 			assert := assert.New(t)
 
 			assembly := strings.Join(tc.assembly, "\n")
-			output, hash, err := miden.Run(assembly, tc.inputFile)
+			output, hash, err := miden.Run(context.Background(), assembly, tc.inputFile)
 
 			// Avoid cluttering test output by only checking output when
 			// the execution was successful
@@ -156,7 +157,7 @@ func TestMidenCompile(t *testing.T) {
 			assert := assert.New(t)
 
 			assembly := strings.Join(tc.assembly, "\n")
-			hash, err := miden.Compile(assembly)
+			hash, err := miden.Compile(context.Background(), assembly)
 
 			// Avoid cluttering test output by only checking output when
 			// the execution was successful
@@ -172,7 +173,7 @@ func TestMidenVersion(t *testing.T) {
 
 	assert := assert.New(t)
 
-	v, err := miden.Version()
+	v, err := miden.Version(context.Background())
 	assert.Nil(err)
 	assert.Equal("Miden 0.6.0", v)
 }
@@ -181,7 +182,7 @@ func TestMidenRunFile(t *testing.T) {
 	needsMiden(t)
 
 	assert := assert.New(t)
-	output, hash, err := miden.RunFile("testdata/test.masm", "testdata/input.json")
+	output, hash, err := miden.RunFile(context.Background(), "testdata/test.masm", "testdata/input.json")
 
 	handleExitError(t, err)
 	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
@@ -192,7 +193,7 @@ func TestMidenCompileFile(t *testing.T) {
 	needsMiden(t)
 
 	assert := assert.New(t)
-	hash, err := miden.CompileFile("testdata/test.masm")
+	hash, err := miden.CompileFile(context.Background(), "testdata/test.masm")
 
 	handleExitError(t, err)
 	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))

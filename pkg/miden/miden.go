@@ -2,6 +2,7 @@
 package miden
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -16,8 +17,6 @@ import (
 // TODO:
 // - [ ] Use --output flag from miden,
 // - [ ] Consider splitting the functionality into separate files,
-// - [ ] Consider adopting Context so we can cancel stuff if needed:
-//  - we can use exec.CommandContext to handle it.
 
 // Treating ProgramHash as []byte for now
 type ProgramHash = []byte
@@ -26,8 +25,8 @@ type ProgramHash = []byte
 type Proof = []byte
 
 // Execute Miden and get it's version
-func Version() (string, error) {
-	out, err := exec.Command("miden", "--version").Output()
+func Version(ctx context.Context) (string, error) {
+	out, err := exec.CommandContext(ctx, "miden", "--version").Output()
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +116,7 @@ func tempFile(contents []byte, pattern string) (name string, err error) {
 	return
 }
 
-func Run(assembly string, input Input) (field.Vector, ProgramHash, error) {
+func Run(ctx context.Context, assembly string, input Input) (field.Vector, ProgramHash, error) {
 	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, nil, err
@@ -136,11 +135,11 @@ func Run(assembly string, input Input) (field.Vector, ProgramHash, error) {
 	}
 	defer os.Remove(inputFile)
 
-	return RunFile(assemblyFile, inputFile)
+	return RunFile(ctx, assemblyFile, inputFile)
 }
 
-func RunFile(assemblyPath string, inputPath string) (field.Vector, ProgramHash, error) {
-	cmd := exec.Command("miden", "run", "--assembly", assemblyPath, "--input", inputPath)
+func RunFile(ctx context.Context, assemblyPath string, inputPath string) (field.Vector, ProgramHash, error) {
+	cmd := exec.CommandContext(ctx, "miden", "run", "--assembly", assemblyPath, "--input", inputPath)
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -155,17 +154,17 @@ func RunFile(assemblyPath string, inputPath string) (field.Vector, ProgramHash, 
 	return output, hash, errors.Join(err1, err2)
 }
 
-func Compile(assembly string) (ProgramHash, error) {
+func Compile(ctx context.Context, assembly string) (ProgramHash, error) {
 	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
 	if err != nil {
 		return nil, err
 	}
 	defer os.Remove(assemblyFile)
 
-	return CompileFile(assemblyFile)
+	return CompileFile(ctx, assemblyFile)
 }
 
-func CompileFile(assemblyPath string) (ProgramHash, error) {
+func CompileFile(ctx context.Context, assemblyPath string) (ProgramHash, error) {
 	cmd := exec.Command("miden", "compile", "--assembly", assemblyPath)
 
 	out, err := cmd.Output()
@@ -179,24 +178,24 @@ func CompileFile(assemblyPath string) (ProgramHash, error) {
 	return hash, err
 }
 
-func Prove(assembly string, input Input) (Proof, error) {
+func Prove(ctx context.Context, assembly string, input Input) (Proof, error) {
 	panic("unimplemented")
 
 }
 
-func ProveFile(assmeblyPath string, inputPath string, proofPath string) error {
-	cmd := exec.Command("miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath)
+func ProveFile(ctx context.Context, assmeblyPath string, inputPath string, proofPath string, outputPath string) error {
+	cmd := exec.Command("miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath, "--output", outputPath)
 
 	_, err := cmd.Output()
 
 	return err
 }
 
-func Verify(programHash ProgramHash, proof Proof, input Input) (bool, error) {
+func Verify(ctx context.Context, programHash ProgramHash, proof Proof, input Input) (bool, error) {
 	panic("unimplemented")
 }
 
 // TODO: Does this need output as well?
-func VerifyFile(programHash ProgramHash, proofPath string, inputPath string) (bool, error) {
+func VerifyFile(ctx context.Context, programHash ProgramHash, proofPath string, inputPath string) (bool, error) {
 	panic("unimplemented")
 }
