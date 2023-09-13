@@ -1,3 +1,4 @@
+// Basic Miden driver for Golang
 package miden
 
 import (
