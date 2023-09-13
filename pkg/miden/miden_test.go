@@ -119,7 +119,7 @@ func handleExitError(t *testing.T, err error) bool {
 	return true
 }
 
-func encodeHash(hash miden.ProgramHash) string {
+func hashToHex(hash miden.ProgramHash) string {
 
 	return hex.EncodeToString(hash)
 }
@@ -141,7 +141,7 @@ func TestMidenRun(t *testing.T) {
 				if expectedOutput == nil {
 					expectedOutput = _defaultOutput
 				}
-				assert.Equal(tc.hash, encodeHash(hash))
+				assert.Equal(tc.hash, hashToHex(hash))
 				assert.Equal(expectedOutput, output)
 			}
 		})
@@ -161,7 +161,7 @@ func TestMidenCompile(t *testing.T) {
 			// Avoid cluttering test output by only checking output when
 			// the execution was successful
 			if handleExitError(t, err) {
-				assert.Equal(tc.hash, encodeHash(hash))
+				assert.Equal(tc.hash, hashToHex(hash))
 			}
 		})
 	}
@@ -184,7 +184,7 @@ func TestMidenRunFile(t *testing.T) {
 	output, hash, err := miden.RunFile("testdata/test.masm", "testdata/test.json")
 
 	handleExitError(t, err)
-	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", encodeHash(hash))
+	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
 	assert.Equal(make(field.Vector, 16), output)
 }
 
@@ -195,5 +195,5 @@ func TestMidenCompileFile(t *testing.T) {
 	hash, err := miden.CompileFile("testdata/test.masm")
 
 	handleExitError(t, err)
-	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", encodeHash(hash))
+	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
 }
