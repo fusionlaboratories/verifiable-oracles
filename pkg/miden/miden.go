@@ -176,3 +176,25 @@ func CompileFile(assemblyPath string) (ProgramHash, error) {
 	hash, err := extractHashCompile(outLines)
 	return hash, err
 }
+
+func Prove(assembly string, input InputFile) (Proof, error) {
+	panic("unimplemented")
+
+}
+
+func ProveFile(assmeblyPath string, inputPath string, proofPath string) error {
+	cmd := exec.Command("miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath)
+
+	_, err := cmd.Output()
+
+	return err
+}
+
+func Verify(programHash ProgramHash, proof Proof, input InputFile) (bool, error) {
+	panic("unimplemented")
+}
+
+// TODO: Does this need output as well?
+func VerifyFile(programHash ProgramHash, proofPath string, inputPath string) (bool, error) {
+	panic("unimplemented")
+}
