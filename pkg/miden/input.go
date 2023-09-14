@@ -21,7 +21,7 @@ func marshalVector(v field.Vector) []string {
 }
 
 // Need to explicitly implement json.Marshaler, as Miden expect expty stacks to
-// be encoded as []
+// be encoded as [] and strings
 func (f Input) MarshalJSON() ([]byte, error) {
 	data := map[string]any{}
 

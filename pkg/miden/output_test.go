@@ -11,23 +11,45 @@ import (
 	"github.com/qredo/verifiable-oracles/pkg/miden"
 )
 
-var _outputTable = map[string]struct {
+var _outputUnmarshalTable = map[string]struct {
 	data string
 	want miden.Output
 }{
 	"empty": {
-		data: "{}",
+		data: `{}`,
 	},
 	"non empty stack": {
-		data: `{"stack": ["1", "2", "3"], "overflow_addr": []}`,
+		data: `{"stack":["1", "2", "3"]}`,
 		want: miden.Output{
 			Stack: field.Vector{field.NewElement(1), field.NewElement(2), field.NewElement(3)},
 		},
 	},
+	"overflow addresses": {
+		data: `{"overflow_addrs":[], "stack":["1", "2", "3"]}`,
+		want: miden.Output{
+			Stack:         field.Vector{field.NewElement(1), field.NewElement(2), field.NewElement(3)},
+			OverflowAddrs: []string{},
+		},
+	},
+}
+
+var _outputMarshalTable = map[string]struct {
+	data miden.Output
+	want string
+}{
+	"empty": {
+		want: `{"overflow_addrs":[],"stack":[]}`,
+	},
+	"non empty stack": {
+		data: miden.Output{
+			Stack: field.Vector{field.NewElement(1), field.NewElement(2), field.NewElement(3)},
+		},
+		want: `{"overflow_addrs":[],"stack":["1","2","3"]}`,
+	},
 }
 
 func TestOutputJsonUnmarshal(t *testing.T) {
-	for name, tc := range _outputTable {
+	for name, tc := range _outputUnmarshalTable {
 		t.Run(name, func(t *testing.T) {
 			data := []byte(tc.data)
 			var out miden.Output
@@ -35,6 +57,17 @@ func TestOutputJsonUnmarshal(t *testing.T) {
 			err := json.Unmarshal(data, &out)
 			assert.Nil(t, err)
 			assert.Equal(t, tc.want, out)
+		})
+	}
+}
+
+func TestOutputJsonMarshal(t *testing.T) {
+	for name, tc := range _outputMarshalTable {
+		t.Run(name, func(t *testing.T) {
+
+			data, err := json.Marshal(tc.data)
+			assert.Nil(t, err)
+			assert.Equal(t, tc.want, string(data))
 		})
 	}
 }

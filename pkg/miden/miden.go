@@ -4,17 +4,13 @@ package miden
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"os"
 	"os/exec"
-	"path"
 	"slices"
 	"strings"
 )
 
 // TODO:
-// - [ ] Use --output flag from miden,
 // - [ ] Consider splitting the functionality into separate files,
 
 // Treating ProgramHash as []byte for now
@@ -75,88 +71,87 @@ func extractHashCompile(outLines []string) ([]byte, error) {
 	return hex.DecodeString(output)
 }
 
-func tempFile(contents []byte, pattern string) (name string, err error) {
-	f, err := os.CreateTemp("", pattern)
-	if err != nil {
-		return
+func extractHashProve(outLines []string) ([]byte, error) {
+	outputPrefix := "Program with hash "
+	outputSuffix := " proved in"
+
+	output, ok := extractLine(outLines, outputPrefix, outputSuffix)
+	if !ok {
+		return nil, errors.New("miden: hash line not found")
 	}
-	name = f.Name()
-	if _, err = f.Write(contents); err != nil {
-		return
-	}
-	if err = f.Close(); err != nil {
-		return
-	}
-	return
+
+	return hex.DecodeString(output)
 }
 
-func Run(ctx context.Context, assembly string, input Input) (output Output, hash ProgramHash, err error) {
-	// Create a temporary directory for all the files instead
-	dirPath, err := os.MkdirTemp("", "miden*")
-	if err != nil {
+// Trying to reimplement Run with driver
+func Run(ctx context.Context, assembly string, input Input) (hash ProgramHash, output Output, err error) {
+	d := newTmpDirDriver()
+	defer d.cleanup()
+
+	if err = d.setAssembly(assembly); err != nil {
 		return
 	}
-	// cleanup
-	defer os.RemoveAll(dirPath)
-
-	var (
-		assemblyPath = path.Join(dirPath, "assembly.masm")
-		inputPath    = path.Join(dirPath, "input.json")
-		outputPath   = path.Join(dirPath, "output.json")
-	)
-
-	// Writing assembly file
-	err = os.WriteFile(assemblyPath, []byte(assembly), 0644)
-	if err != nil {
+	if err = d.setInput(input); err != nil {
 		return
 	}
 
-	// Writing input file
-	inputData, err := json.Marshal(input)
-	if err != nil {
-		return
-	}
-	err = os.WriteFile(inputPath, inputData, 0644)
-	if err != nil {
-		return
-	}
-
-	// running file
-	hash, err = RunFile(ctx, assemblyPath, inputPath, outputPath)
-	if err != nil {
+	if hash, err = RunFile(ctx, d.assemblyPath(), d.inputPath(), d.outputPath()); err != nil {
 		return
 	}
 
 	// getting output
-	outputBytes, err := os.ReadFile(outputPath)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(outputBytes, &output)
+	output, err = d.output()
 	return
 }
 
-func RunFile(ctx context.Context, assemblyPath string, inputPath string, outputPath string) (ProgramHash, error) {
-	cmd := exec.CommandContext(ctx, "miden", "run", "--assembly", assemblyPath, "--input", inputPath, "--output", outputPath)
+func Compile(ctx context.Context, assembly string) (ProgramHash, error) {
+	d := newTmpDirDriver()
+	defer d.cleanup()
 
-	out, err := cmd.Output()
-	if err != nil {
+	if err := d.setAssembly(assembly); err != nil {
 		return nil, err
 	}
 
-	outLines := strings.Split(string(out), "\n")
-
-	return extractHashRun(outLines)
+	return CompileFile(ctx, d.assemblyPath())
 }
 
-func Compile(ctx context.Context, assembly string) (ProgramHash, error) {
-	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(assemblyFile)
+func Prove(ctx context.Context, assembly string, input Input) (hash ProgramHash, output Output, proof Proof, err error) {
+	d := newTmpDirDriver()
+	defer d.cleanup()
 
-	return CompileFile(ctx, assemblyFile)
+	if err = d.setAssembly(assembly); err != nil {
+		return
+	}
+	if err = d.setInput(input); err != nil {
+		return
+	}
+
+	if hash, err = ProveFile(ctx, d.assemblyPath(), d.inputPath(), d.outputPath(), d.proofPath()); err != nil {
+		return
+	}
+	if output, err = d.output(); err != nil {
+		return
+	}
+
+	proof, err = d.proof()
+	return
+}
+
+func Verify(ctx context.Context, programHash ProgramHash, proof Proof, input Input, output Output) (r bool, err error) {
+	d := newTmpDirDriver()
+	defer d.cleanup()
+
+	if err = d.setInput(input); err != nil {
+		return
+	}
+	if err = d.setOutput(output); err != nil {
+		return
+	}
+	if err = d.setProof(proof); err != nil {
+		return
+	}
+
+	return VerifyFile(ctx, programHash, d.inputPath(), d.outputPath(), d.proofPath())
 }
 
 func CompileFile(ctx context.Context, assemblyPath string) (ProgramHash, error) {
@@ -168,29 +163,41 @@ func CompileFile(ctx context.Context, assemblyPath string) (ProgramHash, error) 
 	}
 
 	outLines := strings.Split(string(out), "\n")
-
-	hash, err := extractHashCompile(outLines)
-	return hash, err
+	return extractHashCompile(outLines)
 }
 
-func Prove(ctx context.Context, assembly string, input Input) (Proof, error) {
-	panic("unimplemented")
+func RunFile(ctx context.Context, assemblyPath string, inputPath string, outputPath string) (ProgramHash, error) {
+	cmd := exec.CommandContext(ctx, "miden", "run", "--assembly", assemblyPath, "--input", inputPath, "--output", outputPath)
 
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	outLines := strings.Split(string(out), "\n")
+	return extractHashRun(outLines)
 }
 
-func ProveFile(ctx context.Context, assmeblyPath string, inputPath string, proofPath string, outputPath string) error {
-	cmd := exec.CommandContext(ctx, "miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath, "--output", outputPath)
+func ProveFile(ctx context.Context, assemblyPath string, inputPath string, outputPath string, proofPath string) (ProgramHash, error) {
+	cmd := exec.CommandContext(ctx, "miden", "prove", "--assembly", assemblyPath, "--input", inputPath, "--output", outputPath, "--proof", proofPath)
 
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	outLines := strings.Split(string(out), "\n")
+
+	return extractHashProve(outLines)
+}
+
+func VerifyFile(ctx context.Context, programHash ProgramHash, inputPath string, outputPath string, proofPath string) (bool, error) {
+	hash := hex.EncodeToString(programHash)
+	cmd := exec.CommandContext(ctx, "miden", "verify", "--program-hash", hash, "--input", inputPath, "--output", outputPath, "--proof", proofPath)
 	_, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
 
-	return err
-}
-
-func Verify(ctx context.Context, programHash ProgramHash, proof Proof, input Input) (bool, error) {
-	panic("unimplemented")
-}
-
-// TODO: Does this need output as well?
-func VerifyFile(ctx context.Context, programHash ProgramHash, proofPath string, inputPath string) (bool, error) {
-	panic("unimplemented")
+	return true, nil
 }

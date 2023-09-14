@@ -16,6 +16,7 @@ import (
 	"github.com/qredo/verifiable-oracles/pkg/miden"
 )
 
+// - TODO: Make tests independent of testdata
 var (
 	_testHasMiden  bool
 	_defaultOutput = out()
@@ -135,7 +136,7 @@ func TestMidenRun(t *testing.T) {
 			assert := assert.New(t)
 
 			assembly := strings.Join(tc.assembly, "\n")
-			output, hash, err := miden.Run(context.Background(), assembly, tc.inputFile)
+			hash, output, err := miden.Run(context.Background(), assembly, tc.inputFile)
 
 			// Avoid cluttering test output by only checking output when
 			// the execution was successful
@@ -170,6 +171,52 @@ func TestMidenCompile(t *testing.T) {
 	}
 }
 
+func TestMidenProve(t *testing.T) {
+	needsMiden(t)
+
+	for name, tc := range midenTable {
+		t.Run(name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			assembly := strings.Join(tc.assembly, "\n")
+
+			hash, output, proof, err := miden.Prove(context.Background(), assembly, tc.inputFile)
+
+			if handleExitError(t, err) {
+				expectedOutput := tc.expected
+				if expectedOutput == nil {
+					expectedOutput = _defaultOutput
+				}
+				assert.Equal(tc.hash, hashToHex(hash))
+				assert.Equal(expectedOutput, output.Stack)
+				assert.NotEmpty(proof)
+			}
+		})
+	}
+}
+
+func TestMidenVerify(t *testing.T) {
+	needsMiden(t)
+
+	for name, tc := range midenTable {
+		t.Run(name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			assembly := strings.Join(tc.assembly, "\n")
+
+			hash, output, proof, err := miden.Prove(context.Background(), assembly, tc.inputFile)
+
+			if handleExitError(t, err) {
+				result, err := miden.Verify(context.Background(), hash, proof, tc.inputFile, output)
+				if handleExitError(t, err) {
+					assert.True(result)
+				}
+			}
+		})
+	}
+
+}
+
 func TestMidenVersion(t *testing.T) {
 	needsMiden(t)
 
@@ -183,13 +230,21 @@ func TestMidenVersion(t *testing.T) {
 func TestMidenRunFile(t *testing.T) {
 	needsMiden(t)
 
-	assert := assert.New(t)
-	hash, err := miden.RunFile(context.Background(), "testdata/test.masm", "testdata/input.json", "testdata/output.json")
+	var (
+		assert = assert.New(t)
 
+		assemblyPath = "testdata/test.masm"
+		inputPath    = "testdata/input.json"
+		outputPath   = "testdata/output.json"
+
+		expectedHash = "a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308"
+	)
+
+	hash, err := miden.RunFile(context.Background(), assemblyPath, inputPath, outputPath)
 	handleExitError(t, err)
-	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
+	assert.Equal(expectedHash, hashToHex(hash))
 
-	data, err := os.ReadFile("testdata/output.json")
+	data, err := os.ReadFile(outputPath)
 	assert.Nil(err)
 
 	var output miden.Output
@@ -201,16 +256,54 @@ func TestMidenRunFile(t *testing.T) {
 func TestMidenCompileFile(t *testing.T) {
 	needsMiden(t)
 
-	assert := assert.New(t)
-	hash, err := miden.CompileFile(context.Background(), "testdata/test.masm")
+	var (
+		assert = assert.New(t)
+
+		assemblyPath = "testdata/test.masm"
+
+		expectedHash = "a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308"
+	)
+
+	hash, err := miden.CompileFile(context.Background(), assemblyPath)
 
 	handleExitError(t, err)
-	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
+	assert.Equal(expectedHash, hashToHex(hash))
 }
 
 func TestMidenProveFile(t *testing.T) {
 	needsMiden(t)
 
-	err := miden.ProveFile(context.Background(), "testdata/test.masm", "testdata/input.json", "testdata/proof.bin", "testdata/output.json")
+	var (
+		assemblyPath = "testdata/test.masm"
+		inputPath    = "testdata/input.json"
+		outputPath   = "testdata/output.json"
+		proofPath    = "testdata/proof.bin"
+	)
+
+	_, err := miden.ProveFile(context.Background(), assemblyPath, inputPath, outputPath, proofPath)
 	handleExitError(t, err)
+}
+
+func TestMidenVerifyFile(t *testing.T) {
+	needsMiden(t)
+
+	var (
+		assemblyPath = "testdata/test.masm"
+		inputPath    = "testdata/input.json"
+		outputPath   = "testdata/output.json"
+		proofPath    = "testdata/proof.bin"
+
+		expectedHash = "a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308"
+	)
+
+	programHash, _ := hex.DecodeString(expectedHash)
+
+	_, err := miden.ProveFile(context.Background(), assemblyPath, inputPath, outputPath, proofPath)
+	if handleExitError(t, err) {
+
+		result, err := miden.VerifyFile(context.Background(), programHash, inputPath, outputPath, proofPath)
+		if handleExitError(t, err) {
+			assert.True(t, result)
+		}
+	}
 }
