@@ -3,7 +3,9 @@ package miden_test
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -143,7 +145,7 @@ func TestMidenRun(t *testing.T) {
 					expectedOutput = _defaultOutput
 				}
 				assert.Equal(tc.hash, hashToHex(hash))
-				assert.Equal(expectedOutput, output)
+				assert.Equal(expectedOutput, output.Stack)
 			}
 		})
 	}
@@ -182,11 +184,18 @@ func TestMidenRunFile(t *testing.T) {
 	needsMiden(t)
 
 	assert := assert.New(t)
-	output, hash, err := miden.RunFile(context.Background(), "testdata/test.masm", "testdata/input.json")
+	hash, err := miden.RunFile(context.Background(), "testdata/test.masm", "testdata/input.json", "testdata/output.json")
 
 	handleExitError(t, err)
 	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
-	assert.Equal(make(field.Vector, 16), output)
+
+	data, err := os.ReadFile("testdata/output.json")
+	assert.Nil(err)
+
+	var output miden.Output
+	err = json.Unmarshal(data, &output)
+	assert.Nil(err)
+	assert.Equal(out(), output.Stack)
 }
 
 func TestMidenCompileFile(t *testing.T) {
@@ -197,4 +206,11 @@ func TestMidenCompileFile(t *testing.T) {
 
 	handleExitError(t, err)
 	assert.Equal("a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308", hashToHex(hash))
+}
+
+func TestMidenProveFile(t *testing.T) {
+	needsMiden(t)
+
+	err := miden.ProveFile(context.Background(), "testdata/test.masm", "testdata/input.json", "testdata/proof.bin", "testdata/output.json")
+	handleExitError(t, err)
 }

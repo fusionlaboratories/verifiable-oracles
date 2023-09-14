@@ -8,10 +8,9 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"slices"
 	"strings"
-
-	field "github.com/qredo/verifiable-oracles/pkg/goldilocks"
 )
 
 // TODO:
@@ -53,31 +52,6 @@ func extractLine(lines []string, prefix string, suffix string) (string, bool) {
 	return line, true
 }
 
-func extractOutput(outLines []string) (field.Vector, error) {
-	var (
-		outputPrefix = "Output: ["
-		outputSuffix = "]"
-		elemSep      = ", "
-	)
-
-	output, ok := extractLine(outLines, outputPrefix, outputSuffix)
-	if !ok {
-		return nil, errors.New("miden: output line not found")
-	}
-
-	outElems := strings.Split(output, elemSep)
-	result := make(field.Vector, len(outElems))
-
-	for i := 0; i < len(outElems); i++ {
-		eStr := outElems[i]
-		if _, err := result[i].SetString(eStr); err != nil {
-			return nil, err
-		}
-	}
-
-	return result, nil
-}
-
 func extractHashRun(outLines []string) ([]byte, error) {
 	outputPrefix := "Executing program with hash "
 	outputSuffix := "... done"
@@ -116,42 +90,63 @@ func tempFile(contents []byte, pattern string) (name string, err error) {
 	return
 }
 
-func Run(ctx context.Context, assembly string, input Input) (field.Vector, ProgramHash, error) {
-	assemblyFile, err := tempFile([]byte(assembly), "*.masm")
+func Run(ctx context.Context, assembly string, input Input) (output Output, hash ProgramHash, err error) {
+	// Create a temporary directory for all the files instead
+	dirPath, err := os.MkdirTemp("", "miden*")
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	defer os.Remove(assemblyFile)
+	// cleanup
+	defer os.RemoveAll(dirPath)
 
-	inputContents, err := json.Marshal(input)
+	var (
+		assemblyPath = path.Join(dirPath, "assembly.masm")
+		inputPath    = path.Join(dirPath, "input.json")
+		outputPath   = path.Join(dirPath, "output.json")
+	)
+
+	// Writing assembly file
+	err = os.WriteFile(assemblyPath, []byte(assembly), 0644)
 	if err != nil {
-		return nil, nil, err
-
+		return
 	}
 
-	inputFile, err := tempFile(inputContents, "*.json")
+	// Writing input file
+	inputData, err := json.Marshal(input)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
-	defer os.Remove(inputFile)
+	err = os.WriteFile(inputPath, inputData, 0644)
+	if err != nil {
+		return
+	}
 
-	return RunFile(ctx, assemblyFile, inputFile)
+	// running file
+	hash, err = RunFile(ctx, assemblyPath, inputPath, outputPath)
+	if err != nil {
+		return
+	}
+
+	// getting output
+	outputBytes, err := os.ReadFile(outputPath)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(outputBytes, &output)
+	return
 }
 
-func RunFile(ctx context.Context, assemblyPath string, inputPath string) (field.Vector, ProgramHash, error) {
-	cmd := exec.CommandContext(ctx, "miden", "run", "--assembly", assemblyPath, "--input", inputPath)
+func RunFile(ctx context.Context, assemblyPath string, inputPath string, outputPath string) (ProgramHash, error) {
+	cmd := exec.CommandContext(ctx, "miden", "run", "--assembly", assemblyPath, "--input", inputPath, "--output", outputPath)
 
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	outLines := strings.Split(string(out), "\n")
 
-	output, err1 := extractOutput(outLines)
-	hash, err2 := extractHashRun(outLines)
-
-	return output, hash, errors.Join(err1, err2)
+	return extractHashRun(outLines)
 }
 
 func Compile(ctx context.Context, assembly string) (ProgramHash, error) {
@@ -165,7 +160,7 @@ func Compile(ctx context.Context, assembly string) (ProgramHash, error) {
 }
 
 func CompileFile(ctx context.Context, assemblyPath string) (ProgramHash, error) {
-	cmd := exec.Command("miden", "compile", "--assembly", assemblyPath)
+	cmd := exec.CommandContext(ctx, "miden", "compile", "--assembly", assemblyPath)
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -184,7 +179,7 @@ func Prove(ctx context.Context, assembly string, input Input) (Proof, error) {
 }
 
 func ProveFile(ctx context.Context, assmeblyPath string, inputPath string, proofPath string, outputPath string) error {
-	cmd := exec.Command("miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath, "--output", outputPath)
+	cmd := exec.CommandContext(ctx, "miden", "prove", "--assembly", assmeblyPath, "--input", inputPath, "--proof", proofPath, "--output", outputPath)
 
 	_, err := cmd.Output()
 
