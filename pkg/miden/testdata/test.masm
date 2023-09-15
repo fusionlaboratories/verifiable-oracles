@@ -1,0 +1,4 @@
+# Most minimal Miden assembly program
+begin
+  assert_eq
+end
