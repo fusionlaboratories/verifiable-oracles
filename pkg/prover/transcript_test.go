@@ -36,7 +36,7 @@ func TestTranscript_Marshal_Roundtrip(t *testing.T) {
 			b, err := json.Marshal(transcript)
 			assert.Nil(t, err)
 
-			transcript2 := prover.Transcript{}
+			var transcript2 prover.Transcript
 			err = json.Unmarshal(b, &transcript2)
 
 			assert.Nil(t, err)

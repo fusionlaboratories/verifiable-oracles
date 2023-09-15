@@ -25,16 +25,20 @@ var _ prover.Prover[Input] = (*DummyProver)(nil)
 var _ prover.Verifier[Input] = (*DummyProver)(nil)
 
 func Test_DummyProver_Prove(t *testing.T) {
-	assert := assert.New(t)
-	dummy := &DummyProver{}
+	var (
+		assert = assert.New(t)
+		dummy  = &DummyProver{}
+	)
 
 	_, err := dummy.Prove(Input{})
 	assert.Nil(err)
 }
 
 func Test_DummyProver_Verify(t *testing.T) {
-	assert := assert.New(t)
-	dummy := &DummyProver{}
+	var (
+		assert = assert.New(t)
+		dummy  = &DummyProver{}
+	)
 
 	_, err := dummy.Verify(Input{}, prover.Proof{})
 	assert.Nil(err)

@@ -228,7 +228,7 @@ func Test_InMemory_GetTransactionHash_MissingTransactionError(t *testing.T) {
 	assert := assert.New(t)
 	o := &oracle.InMemoryOracle{}
 
-	hash := common.Hash{}
+	var hash common.Hash
 	index := uint64(132)
 
 	_, err := o.GetTransactionHash(hash, index)
@@ -405,9 +405,10 @@ func Benchmark_Transcript(t *testing.B) {
 		o.AddTransaction(tc.blockHash, tc.transactionIndex, tc.transactionHash)
 	}
 
-	to := oracle.NewTranscriptOracle(o)
-
-	r := common.Hash{}
+	var (
+		to = oracle.NewTranscriptOracle(o)
+		r  common.Hash
+	)
 
 	for n := 0; n < t.N; n++ {
 		for _, tc := range blockTranscriptTable {
