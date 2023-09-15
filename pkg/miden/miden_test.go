@@ -30,21 +30,27 @@ func out(v ...field.Element) field.Vector {
 	return v
 }
 
-var midenTable = map[string]struct {
-	assembly  []string
+type midenTableEntry struct {
+	program   []string
 	inputFile miden.Input
 	expected  field.Vector
 	hash      string
-}{
+}
+
+func (e midenTableEntry) assembly() []byte {
+	return []byte(strings.Join(e.program, "\n"))
+}
+
+var midenTable = map[string]midenTableEntry{
 	"empty program": {
-		assembly: []string{
+		program: []string{
 			"begin",
 			"end",
 		},
 		hash: "f0db3924f3e2d677a51924b09ecef8a12416a6ceb09fadd39785bb4f685cab66",
 	},
 	"assert": {
-		assembly: []string{
+		program: []string{
 			"begin",
 			"assert",
 			"end",
@@ -55,7 +61,7 @@ var midenTable = map[string]struct {
 		hash: "1858ec2e6abdf1d1447474e5ab8e1313c4f93276e82f3baac9a056d6ecdc0c9b",
 	},
 	"assertz": {
-		assembly: []string{
+		program: []string{
 			"begin",
 			"assertz",
 			"end",
@@ -66,7 +72,7 @@ var midenTable = map[string]struct {
 		hash: "f9b9df59a9549b8e8833d86ec3f1f97f0fdfe002c24eb8661c4d7242d3c14a45",
 	},
 	"add one to two": {
-		assembly: []string{
+		program: []string{
 			"begin",
 			"add",
 			"end",
@@ -78,7 +84,7 @@ var midenTable = map[string]struct {
 		hash:     "63c2b2b5cf6abd6414fb93cc7af4ad22fed1c8d3182ea1a01d3aba005c453c57",
 	},
 	"get field element from advice stack": {
-		assembly: []string{
+		program: []string{
 			"begin",
 			"adv_push.1",
 			"assert_eq",
@@ -134,7 +140,7 @@ func TestMidenRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			assembly := strings.Join(tc.assembly, "\n")
+			assembly := tc.assembly()
 			hash, output, err := miden.Run(context.Background(), assembly, tc.inputFile)
 
 			// Avoid cluttering test output by only checking output when
@@ -158,7 +164,7 @@ func TestMidenCompile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			assembly := strings.Join(tc.assembly, "\n")
+			assembly := tc.assembly()
 			hash, err := miden.Compile(context.Background(), assembly)
 
 			// Avoid cluttering test output by only checking output when
@@ -177,7 +183,7 @@ func TestMidenProve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			assembly := strings.Join(tc.assembly, "\n")
+			assembly := tc.assembly()
 
 			hash, output, proof, err := miden.Prove(context.Background(), assembly, tc.inputFile)
 
@@ -201,7 +207,7 @@ func TestMidenVerify(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			assembly := strings.Join(tc.assembly, "\n")
+			assembly := tc.assembly()
 
 			hash, output, proof, err := miden.Prove(context.Background(), assembly, tc.inputFile)
 

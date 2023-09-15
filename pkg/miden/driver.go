@@ -35,11 +35,11 @@ func (d *driver) proofPath() string {
 	return path.Join(d.wd, "proof.bin")
 }
 
-func (d *driver) setAssembly(assembly string) error {
+func (d *driver) setAssembly(assembly Assembly) error {
 	if d.err != nil {
 		return d.err
 	}
-	d.err = os.WriteFile(d.assemblyPath(), []byte(assembly), 0644)
+	d.err = os.WriteFile(d.assemblyPath(), assembly, 0644)
 	return d.err
 }
 
