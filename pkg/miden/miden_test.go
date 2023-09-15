@@ -16,7 +16,6 @@ import (
 	"github.com/qredo/verifiable-oracles/pkg/miden"
 )
 
-// - TODO: Make tests independent of testdata
 var (
 	_testHasMiden  bool
 	_defaultOutput = out()
@@ -235,7 +234,7 @@ func TestMidenRunFile(t *testing.T) {
 
 		assemblyPath = "testdata/test.masm"
 		inputPath    = "testdata/input.json"
-		outputPath   = "testdata/output.json"
+		outputPath   = "testdata/run/output.json"
 
 		expectedHash = "a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308"
 	)
@@ -276,8 +275,8 @@ func TestMidenProveFile(t *testing.T) {
 	var (
 		assemblyPath = "testdata/test.masm"
 		inputPath    = "testdata/input.json"
-		outputPath   = "testdata/output.json"
-		proofPath    = "testdata/proof.bin"
+		outputPath   = "testdata/prove/output.json"
+		proofPath    = "testdata/prove/proof.bin"
 	)
 
 	_, err := miden.ProveFile(context.Background(), assemblyPath, inputPath, outputPath, proofPath)
@@ -290,8 +289,8 @@ func TestMidenVerifyFile(t *testing.T) {
 	var (
 		assemblyPath = "testdata/test.masm"
 		inputPath    = "testdata/input.json"
-		outputPath   = "testdata/output.json"
-		proofPath    = "testdata/proof.bin"
+		outputPath   = "testdata/verify/output.json"
+		proofPath    = "testdata/verify/proof.bin"
 
 		expectedHash = "a4820838f4914083b432faaaef596a86b84c6a061d0bf90711d6ba294244e308"
 	)
