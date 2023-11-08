@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/bits-and-blooms/bitset v1.7.0
-	github.com/consensys/gnark-crypto v0.10.0
+	github.com/consensys/gnark-crypto v0.12.1
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/leanovate/gopter v0.2.9
 	github.com/stretchr/testify v1.8.4
